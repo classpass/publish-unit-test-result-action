@@ -22,12 +22,12 @@ runs:
 
     - name: Setup Python
       if: inputs.python-version != 'installed'
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
       with:
         python-version: ${{ inputs.python-version }}
 
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
 
     - name: Detect OS
       id: os
@@ -49,7 +49,7 @@ runs:
       shell: bash
 
     - name: Cache PIP Packages
-      uses: actions/cache@v4
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae  # v5.0.5
       id: cache
       if: github.event_name != 'schedule'
       with:
@@ -78,8 +78,17 @@ runs:
         python -m pip cache list || true
 
         # install dependencies
-        python_minor_version="$(python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')"
-        python -m pip install --force -r python/requirements-$python_minor_version.txt
+        PYTHON_VERSION="$(python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')"
+        if [[ "$PYTHON_VERSION" == "3.7" ]]; then
+          DEPENDENCIES_VERSION=3.7
+        elif [[ "$PYTHON_VERSION" == "3.8" ]]; then
+          DEPENDENCIES_VERSION=3.8
+        elif [[ "$PYTHON_VERSION" == "3.9" ]]; then
+          DEPENDENCIES_VERSION=3.9
+        else
+          DEPENDENCIES_VERSION=post-3.9
+        fi
+        python -m pip install --force -r python/requirements-$DEPENDENCIES_VERSION.txt
         python -m pip install --force -r python/test/requirements.txt -c python/test/constraints.txt
 
         # inspect pip cache
@@ -114,7 +123,7 @@ runs:
       shell: bash
     - name: Upload changed expectation files
       if: steps.changes.outcome == 'failure'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
       with:
         name: Changed expectations (python-${{ inputs.python-version }}, ${{ inputs.os }})
         path: changed-expectations.zip
@@ -149,8 +158,8 @@ runs:
       shell: bash
   
     - name: Upload Test Results
-      if: always()
-      uses: actions/upload-artifact@v4
+      if: (!cancelled())
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
       with:
         name: Test Results (python-${{ inputs.python-version }}, ${{ inputs.os }})
         path: |

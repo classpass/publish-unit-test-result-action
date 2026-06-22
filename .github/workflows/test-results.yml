@@ -10,7 +10,7 @@ permissions: {}
 jobs:
   test-results:
     name: Test Results (reference)
-    if: github.event.workflow_run.conclusion != 'skipped'
+    if: github.event.workflow_run.conclusion == 'success' || github.event.workflow_run.conclusion == 'failure'
     runs-on: ubuntu-latest
     permissions:
       checks: write
@@ -18,7 +18,7 @@ jobs:
 
     steps:
       - name: Download and Extract Artifacts
-        uses: dawidd6/action-download-artifact@e7466d1a7587ed14867642c2ca74b5bcc1e19a2d
+        uses: dawidd6/action-download-artifact@b6e2e70617bc3265edd6dab6c906732b2f1ae151  # v21
         with:
           run_id: ${{ github.event.workflow_run.id }}
           path: artifacts
@@ -53,7 +53,7 @@ jobs:
 
       - name: Create badge
         if: github.event.workflow_run.event != 'schedule'
-        uses: emibcn/badge-action@4209421db54c8764d8932070ffd0f81715a629bf
+        uses: emibcn/badge-action@f9150fde070fcca0c4e832437611b44838fcd325  # v2.0.4
         with:
           label: Tests
           status: '${{ fromJSON( steps.test-results.outputs.json ).formatted.stats.tests }} tests, ${{ fromJSON( steps.test-results.outputs.json ).formatted.stats.runs }} runs: ${{ fromJSON( steps.test-results.outputs.json ).conclusion }}'
@@ -64,7 +64,7 @@ jobs:
         # Upload only for master branch and not for scheduled event
         if: >
           github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'master' && github.event.workflow_run.event != 'schedule'
-        uses: andymckay/append-gist-action@1fbfbbce708a39bd45846f0955ed5521f2099c6d
+        uses: andymckay/append-gist-action@ab30bf28df67017c7ad696500b218558c7c04db3  # v0.3
         with:
           token: ${{ secrets.GIST_TOKEN }}
           gistURL: https://gist.githubusercontent.com/EnricoMi/612cb538c14731f1a8fefe504f519395

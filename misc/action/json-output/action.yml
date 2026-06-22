@@ -15,12 +15,18 @@ runs:
   steps:
   - name: JSON file
     shell: bash
+    env:
+      JSON: ${{ inputs.json }}
+      JSON_FILE: ${{ inputs.json_file }}
     run: |
-      jq . "${{ inputs.json_file }}"
-      jq .conclusion "${{ inputs.json_file }}"
+      jq . <<< "$JSON" > json_output
+      jq . "$JSON_FILE" > json_file
+      echo "json output: $(cat json_output | wc -c) bytes"
+      echo "json file: $(cat json_file | wc -c) bytes"
+      echo "conclusion: $(jq .conclusion json_file)"
 
   - name: JSON output
-    if: always()
+    if: (!cancelled())
     env:
       TITLE: ${{ fromJSON( inputs.json ).title }}
       SUMMARY: ${{ fromJSON( inputs.json ).summary }}
@@ -32,6 +38,7 @@ runs:
       COMMIT: ${{ fromJSON( inputs.json ).stats.commit }}
       REFERENCE: ${{ fromJSON( inputs.json ).stats_with_delta.reference_commit }}
       ANNOTATIONS: ${{ fromJSON( inputs.json ).annotations }}
+      JSON: ${{ inputs.json }}
     shell: bash
     run: |
       echo "title=$TITLE"
@@ -47,9 +54,7 @@ runs:
 
       echo
       echo "JSON output:"
-      cat <<EOF
-      ${{ inputs.json }}
-      EOF
+      echo "$JSON"
       echo
 
       if [[ "$CONCLUSION" != "success" ]]

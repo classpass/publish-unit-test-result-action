@@ -26,7 +26,7 @@ or ![ARM Linux](misc/badge-arm.svg) self-hosted runners that support Docker:
 ```yaml
 - name: Publish Test Results
   uses: EnricoMi/publish-unit-test-result-action@v2
-  if: always()
+  if: (!cancelled())
   with:
     files: |
       test-results/**/*.xml
@@ -36,40 +36,40 @@ or ![ARM Linux](misc/badge-arm.svg) self-hosted runners that support Docker:
 
 See the [notes on running this action with absolute paths](#running-with-absolute-paths) if you cannot use relative test result file paths.
 
-Use this for ![macOS](misc/badge-macos.svg) (e.g. `runs-on: macos-latest`) runners:
+Use this for ![macOS](misc/badge-macos.svg) (e.g. `runs-on: macos-latest`) runners (no Docker needed):
 ```yaml
 - name: Publish Test Results
   uses: EnricoMi/publish-unit-test-result-action/macos@v2
-  if: always()
+  if: (!cancelled())
   with:
-    files: |
-      test-results/**/*.xml
-      test-results/**/*.trx
-      test-results/**/*.json
+    files: …
 ```
 
-… and ![Windows](misc/badge-windows.svg) (e.g. `runs-on: windows-latest`) runners:
+… and ![Windows](misc/badge-windows.svg) (e.g. `runs-on: windows-latest`) runners (no Docker needed):
 ```yaml
 - name: Publish Test Results
   uses: EnricoMi/publish-unit-test-result-action/windows@v2
-  if: always()
+  if: (!cancelled())
   with:
-    files: |
-      test-results\**\*.xml
-      test-results\**\*.trx
-      test-results\**\*.json
+    files: …
+```
+
+For Windows **without PowerShell** installed, there is the Bash shell variant:
+```yaml
+- name: Publish Test Results
+  uses: EnricoMi/publish-unit-test-result-action/windows/bash@v2
+  if: (!cancelled())
+  with:
+    files: …
 ```
 
 For **self-hosted** Linux GitHub Actions runners **without Docker** installed, please use:
 ```yaml
 - name: Publish Test Results
   uses: EnricoMi/publish-unit-test-result-action/linux@v2
-  if: always()
+  if: (!cancelled())
   with:
-    files: |
-      test-results/**/*.xml
-      test-results/**/*.trx
-      test-results/**/*.json
+    files: …
 ```
 
 See the [notes on running this action as a non-Docker action](#running-as-a-non-docker-action).
@@ -77,7 +77,8 @@ See the [notes on running this action as a non-Docker action](#running-as-a-non-
 If you see the `"Resource not accessible by integration"` error, you have to grant additional [permissions](#permissions), or
 [setup the support for pull requests from fork repositories and branches created by Dependabot](#support-fork-repositories-and-dependabot-branches).
 
-The `if: always()` clause guarantees that this action always runs, even if earlier steps (e.g., the test step) in your workflow fail.
+The `if: (!cancelled())` clause guarantees that this action always runs, even if earlier steps (e.g., the test step) in your workflow fail,
+but not if the workflow was cancelled.
 
 When run multiple times in one workflow, the [option](#configuration) `check_name` has to be set to a unique value for each instance.
 Otherwise, the multiple runs overwrite each other's results.
@@ -85,6 +86,9 @@ Otherwise, the multiple runs overwrite each other's results.
 ***Note:** By default, this action does not fail if tests failed. This can be [configured](#configuration) via `action_fail`.
 The action that executed the tests should fail on test failure. The published results however indicate failure if tests fail or errors occur,
 which can be [configured](#configuration) via `fail_on`.*
+
+Thanks to the provided [typings](action-types.yml), it is possible to use this action in a type-safe way using
+[GitHub Workflows Kt](https://github.com/typesafegithub/github-workflows-kt), which allows writing workflow files using a type-safe Kotlin DSL.
 
 ## Permissions
 
@@ -309,8 +313,8 @@ The list of most notable options:
 |:-----|:-----:|:----------|
 |`commit`|`${{env.GITHUB_SHA}}`|An alternative commit SHA to which test results are published. The `push` and `pull_request`events are handled, but for other [workflow events](https://docs.github.com/en/free-pro-team@latest/actions/reference/events-that-trigger-workflows#push) `GITHUB_SHA` may refer to different kinds of commits. See [GitHub Workflow documentation](https://docs.github.com/en/free-pro-team@latest/actions/reference/events-that-trigger-workflows) for details.|
 |`github_token`|`${{github.token}}`|An alternative GitHub token, other than the default provided by GitHub Actions runner.|
-|`github_token_actor`|`github-actions`|The name of the GitHub app that owns the GitHub API Access Token (see github_token). Used to identify pull request comments created by this action during earlier runs. Has to be set when `github_token` is set to a GitHub app installation token (other than GitHub actions). Otherwise, existing comments will not be updated, but new comments created. Note: this does not change the bot name of the pull request comments.|
 |`github_retries`|`10`|Requests to the GitHub API are retried this number of times. The value must be a positive integer or zero.|
+|`ssl_verify`|`true`|Either `true` or `false`, in which case it controls whether to verify the Github server’s TLS certificate, or a string, in which case it must be a path to a CA bundle to use. Default is `true`.|
 |`seconds_between_github_reads`|`0.25`|Sets the number of seconds the action waits between concurrent read requests to the GitHub API.|
 |`seconds_between_github_writes`|`2.0`|Sets the number of seconds the action waits between concurrent write requests to the GitHub API.|
 |`secondary_rate_limit_wait_seconds`|`60.0`|Sets the number of seconds to wait before retrying secondary rate limit errors. If not set, the default defined in the PyGithub library is used (currently 60 seconds).|
@@ -352,6 +356,28 @@ and removal, and `skipped tests` to detect new skipped and un-skipped tests, as 
 `check_run_annotations_branch` to contain your default branch.
 </details>
 
+<details>
+<summary>Options related to Docker</summary>
+
+You can control the Docker image used for the action as below. For this, you need to run the action as follows:
+
+```yaml
+- name: Publish Test Results
+  uses: EnricoMi/publish-unit-test-result-action/docker@v2
+  if: (!cancelled())
+  with:
+    docker_registry: ghcr.io
+    files: …
+```
+
+| Option            |               Default Value                | Description                                                                                                      |
+|:------------------|:------------------------------------------:|:-----------------------------------------------------------------------------------------------------------------|
+| `docker_registry` |                 `ghcr.io`                  | The docker registry to pull the pre-built action from. Defaults to the Github registry `ghcr.io`.                |
+| `docker_image`    | `enricomi/publish-unit-test-result-action` | The docker image name to pull the pre-built action from. Defaults to `enricomi/publish-unit-test-result-action`. |
+| `docker_tag`      |      *The same version as in `uses:`*      | The docker tag to pull the pre-built action from. This is usually not needed.                                    |
+| `docker_platform` |                                            | The platform to use when pulling the docker image.                                                               |
+</details>
+
 ## JSON result
 
 The gathered test information are accessible as JSON via [GitHub Actions steps outputs](https://docs.github.com/en/actions/learn-github-actions/contexts#steps-context) string or JSON file.
@@ -365,7 +391,7 @@ The `json` output of the action can be accessed through the expression `steps.<i
 - name: Publish Test Results
   uses: EnricoMi/publish-unit-test-result-action@v2
   id: test-results
-  if: always()
+  if: (!cancelled())
   with:
     files: "test-results/**/*.xml"
 
@@ -534,10 +560,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
 
       - name: Setup Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -545,8 +571,8 @@ jobs:
         run: python -m pytest test --junit-xml pytest.xml
 
       - name: Upload Test Results
-        if: always()
-        uses: actions/upload-artifact@v4
+        if: (!cancelled())
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: Test Results (Python ${{ matrix.python-version }})
           path: pytest.xml
@@ -566,11 +592,11 @@ jobs:
 
       # only needed for private repository
       issues: read
-    if: always()
+    if: (!cancelled())
 
     steps:
       - name: Download Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7.0.0
         with:
           path: artifacts
 
@@ -611,7 +637,7 @@ event_file:
   runs-on: ubuntu-latest
   steps:
   - name: Upload
-    uses: actions/upload-artifact@v4
+    uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
     with:
       name: Event File
       path: ${{ github.event_path }}
@@ -622,8 +648,8 @@ Adjust the value of `path` to fit your setup:
 
 ```yaml
 - name: Upload Test Results
-  if: always()
-  uses: actions/upload-artifact@v4
+  if: (!cancelled())
+  uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
   with:
     name: Test Results
     path: |
@@ -662,7 +688,7 @@ jobs:
   test-results:
     name: Test Results
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion != 'skipped'
+    if: github.event.workflow_run.conclusion == 'success' || github.event.workflow_run.conclusion == 'failure'
 
     permissions:
       checks: write
@@ -680,11 +706,11 @@ jobs:
       actions: read
 
     steps:
-       - name: Download and Extract Artifacts
-         uses: dawidd6/action-download-artifact@e7466d1a7587ed14867642c2ca74b5bcc1e19a2d
-         with:
-            run_id: ${{ github.event.workflow_run.id }}
-            path: artifacts
+      - name: Download and Extract Artifacts
+        uses: dawidd6/action-download-artifact@b6e2e70617bc3265edd6dab6c906732b2f1ae151  # v21
+        with:
+           run_id: ${{ github.event.workflow_run.id }}
+           path: artifacts
 
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
@@ -721,7 +747,7 @@ Add the event name to `check_name` to avoid different event types overwriting ea
 ```yaml
 - name: Publish Test Results
   uses: EnricoMi/publish-unit-test-result-action@v2
-  if: always()
+  if: (!cancelled())
   with:
     check_name: "Test Results (${{ github.event.workflow_run.event || github.event_name }})"
     files: "test-results/**/*.xml"
@@ -734,7 +760,7 @@ Disabling the pull request comment mode (`"off"`) for events other than `pull_re
 ```yaml
 - name: Publish Test Results
   uses: EnricoMi/publish-unit-test-result-action@v2
-  if: always()
+  if: (!cancelled())
   with:
     # set comment_mode to "always" for pull_request event, set to "off" for all other event types
     comment_mode: ${{ (github.event.workflow_run.event == 'pull_request' || github.event_name == 'pull_request') && 'always' || 'off' }}
@@ -756,7 +782,7 @@ steps:
 - name: Publish Test Results
   uses: EnricoMi/publish-unit-test-result-action@v2
   id: test-results
-  if: always()
+  if: (!cancelled())
   with:
     files: "test-results/**/*.xml"
 
@@ -776,7 +802,7 @@ steps:
     esac
 
 - name: Create badge
-  uses: emibcn/badge-action@808173dd03e2f30c980d03ee49e181626088eee8
+  uses: emibcn/badge-action@f9150fde070fcca0c4e832437611b44838fcd325  # v2.0.4
   with:
     label: Tests
     status: '${{ fromJSON( steps.test-results.outputs.json ).formatted.stats.tests }} tests, ${{ fromJSON( steps.test-results.outputs.json ).formatted.stats.runs }} runs: ${{ fromJSON( steps.test-results.outputs.json ).conclusion }}'
@@ -788,7 +814,7 @@ steps:
   if: >
     github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'master' ||
     github.event_name != 'workflow_run' && github.ref == 'refs/heads/master'
-  uses: andymckay/append-gist-action@6e8d64427fe47cbacf4ab6b890411f1d67c07f3e
+  uses: andymckay/append-gist-action@ab30bf28df67017c7ad696500b218558c7c04db3  # v0.3
   with:
     token: ${{ secrets.GIST_TOKEN }}
     gistURL: https://gist.githubusercontent.com/{user}/{id}
@@ -817,14 +843,14 @@ you have to copy files to a relative path first, and then use the relative path:
 
 ```yaml
 - name: Copy Test Results
-  if: always()
+  if: (!cancelled())
   run: |
     cp -Lpr /tmp/test-results test-results
   shell: bash
 
 - name: Publish Test Results
   uses: EnricoMi/publish-unit-test-result-action@v2
-  if: always()
+  if: (!cancelled())
   with:
      files: |
         test-results/**/*.xml
@@ -849,7 +875,7 @@ Self-hosted runners may require setting up a Python environment first:
 
 ```yaml
 - name: Setup Python
-  uses: actions/setup-python@v5
+  uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
   with:
     python-version: 3.8
 ```
@@ -870,3 +896,26 @@ is **deprecated**, please use an action appropriate for your operating system an
 - Windows (Bash shell): `uses: EnricoMi/publish-unit-test-result-action/windows/bash@v2`
 
 These are non-Docker variations of this action. For details, see section ["Running as a non-Docker action"](#running-as-a-non-docker-action) above.
+
+The composite action was able to run on any operating system, as long as Bash shell is installed.
+The same behaviour can be achieved with multiple steps, each for a specific operating system:
+
+```yaml
+- name: Publish Test Results
+  uses: EnricoMi/publish-unit-test-result-action/linux@v2
+  if: runner.os == 'Linux'
+  with:
+    files: test-results/**/*.xml
+
+- name: Publish Test Results
+  uses: EnricoMi/publish-unit-test-result-action/macos@v2
+  if: runner.os == 'macOS'
+  with:
+    files: test-results/**/*.xml
+
+- name: Publish Test Results
+  uses: EnricoMi/publish-unit-test-result-action/windows/bash@v2
+  if: runner.os == 'Windows'
+  with:
+    files: test-results/**/*.xml
+```

@@ -13,10 +13,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
 
       - name: Download Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         with:
           path: artifacts
 
@@ -57,141 +57,48 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3  # v4.1.0
         with:
-          image: tonistiigi/binfmt:latest
+          image: tonistiigi/binfmt:qemu-v10.2.1@sha256:d3b963f787999e6c0219a48dba02978769286ff61a5f4d26245cb6a6e5567ea3  # v10.2.1
           platforms: ${{ matrix.arch }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5  # v4.1.0
 
       - name: Build Docker image
         id: build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf  # v7.2.0
         with:
           load: true
           push: false
           platforms: linux/${{ matrix.arch }}
-          tags: enricomi/publish-unit-test-result-action:latest
+          tags: local/enricomi/publish-unit-test-result-action:latest
           outputs: type=docker
         env:
           DOCKER_BUILD_RECORD_UPLOAD: false
 
       - name: Download Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         with:
           path: artifacts
 
       - name: Publish Test Results
         id: test-results
-        if: always()
-        env:
-          INPUT_GITHUB_TOKEN: ${{ github.token }}
-          INPUT_CHECK_NAME: Test Results (Docker Image ${{ matrix.arch }})
-          INPUT_FILES: "artifacts/**/*.xml"
-          INPUT_JSON_FILE: "tests.json"
-          INPUT_JSON_SUITE_DETAILS: true
-          INPUT_JSON_TEST_CASE_RESULTS: true
-          INPUT_REPORT_SUITE_LOGS: "any"
-        run: |
-          docker run --platform linux/${{ matrix.arch }} \
-            --workdir $GITHUB_WORKSPACE \
-            --rm \
-            -e "INPUT_CHECK_NAME" \
-            -e "INPUT_JSON_FILE" \
-            -e "INPUT_JSON_SUITE_DETAILS" \
-            -e "INPUT_JSON_TEST_CASE_RESULTS" \
-            -e "INPUT_LOG_LEVEL" \
-            -e "INPUT_ROOT_LOG_LEVEL" \
-            -e "INPUT_GITHUB_TOKEN" \
-            -e "INPUT_GITHUB_TOKEN_ACTOR" \
-            -e "INPUT_GITHUB_RETRIES" \
-            -e "INPUT_COMMIT" \
-            -e "INPUT_COMMENT_TITLE" \
-            -e "INPUT_COMMENT_MODE" \
-            -e "INPUT_FAIL_ON" \
-            -e "INPUT_ACTION_FAIL" \
-            -e "INPUT_ACTION_FAIL_ON_INCONCLUSIVE" \
-            -e "INPUT_FILES" \
-            -e "INPUT_JUNIT_FILES" \
-            -e "INPUT_NUNIT_FILES" \
-            -e "INPUT_XUNIT_FILES" \
-            -e "INPUT_TRX_FILES" \
-            -e "INPUT_TIME_UNIT" \
-            -e "INPUT_TEST_FILE_PREFIX" \
-            -e "INPUT_REPORT_INDIVIDUAL_RUNS" \
-            -e "INPUT_REPORT_SUITE_LOGS" \
-            -e "INPUT_DEDUPLICATE_CLASSES_BY_FILE_NAME" \
-            -e "INPUT_LARGE_FILES" \
-            -e "INPUT_IGNORE_RUNS" \
-            -e "INPUT_CHECK_RUN" \
-            -e "INPUT_JOB_SUMMARY" \
-            -e "INPUT_COMPARE_TO_EARLIER_COMMIT" \
-            -e "INPUT_PULL_REQUEST_BUILD" \
-            -e "INPUT_EVENT_FILE" \
-            -e "INPUT_EVENT_NAME" \
-            -e "INPUT_TEST_CHANGES_LIMIT" \
-            -e "INPUT_CHECK_RUN_ANNOTATIONS" \
-            -e "INPUT_CHECK_RUN_ANNOTATIONS_BRANCH" \
-            -e "INPUT_SECONDS_BETWEEN_GITHUB_READS" \
-            -e "INPUT_SECONDS_BETWEEN_GITHUB_WRITES" \
-            -e "INPUT_SECONDARY_RATE_LIMIT_WAIT_SECONDS" \
-            -e "INPUT_JSON_THOUSANDS_SEPARATOR" \
-            -e "INPUT_SEARCH_PULL_REQUESTS" \
-            -e "HOME" \
-            -e "GITHUB_JOB" \
-            -e "GITHUB_REF" \
-            -e "GITHUB_SHA" \
-            -e "GITHUB_REPOSITORY" \
-            -e "GITHUB_REPOSITORY_OWNER" \
-            -e "GITHUB_RUN_ID" \
-            -e "GITHUB_RUN_NUMBER" \
-            -e "GITHUB_RETENTION_DAYS" \
-            -e "GITHUB_RUN_ATTEMPT" \
-            -e "GITHUB_ACTOR" \
-            -e "GITHUB_TRIGGERING_ACTOR" \
-            -e "GITHUB_WORKFLOW" \
-            -e "GITHUB_HEAD_REF" \
-            -e "GITHUB_BASE_REF" \
-            -e "GITHUB_EVENT_NAME" \
-            -e "GITHUB_SERVER_URL" \
-            -e "GITHUB_API_URL" \
-            -e "GITHUB_GRAPHQL_URL" \
-            -e "GITHUB_REF_NAME" \
-            -e "GITHUB_REF_PROTECTED" \
-            -e "GITHUB_REF_TYPE" \
-            -e "GITHUB_WORKSPACE" \
-            -e "GITHUB_ACTION" \
-            -e "GITHUB_EVENT_PATH" \
-            -e "GITHUB_ACTION_REPOSITORY" \
-            -e "GITHUB_ACTION_REF" \
-            -e "GITHUB_PATH" \
-            -e "GITHUB_ENV" \
-            -e "GITHUB_STEP_SUMMARY" \
-            -e "GITHUB_STATE" \
-            -e "GITHUB_OUTPUT" \
-            -e "RUNNER_OS" \
-            -e "RUNNER_ARCH" \
-            -e "RUNNER_NAME" \
-            -e "RUNNER_TOOL_CACHE" \
-            -e "RUNNER_TEMP" \
-            -e "RUNNER_WORKSPACE" \
-            -e "ACTIONS_RUNTIME_URL" \
-            -e "ACTIONS_RUNTIME_TOKEN" \
-            -e "ACTIONS_CACHE_URL" \
-            -e GITHUB_ACTIONS=true \
-            -e CI=true \
-            -v "$RUNNER_TEMP":"$RUNNER_TEMP" \
-            -v "/var/run/docker.sock":"/var/run/docker.sock" \
-            -v "/home/runner/work/_temp/_github_home":"/github/home" \
-            -v "/home/runner/work/_temp/_github_workflow":"/github/workflow" \
-            -v "/home/runner/work/_temp/_runner_file_commands":"/github/file_commands" \
-            -v "/home/runner/work/publish-unit-test-result-action/publish-unit-test-result-action":"$GITHUB_WORKSPACE" \
-            enricomi/publish-unit-test-result-action:latest
-        shell: bash
+        if: (!cancelled())
+        uses: ./docker
+        with:
+          check_name: Test Results (Docker Image ${{ matrix.arch }})
+          files: "artifacts/**/*.xml"
+          json_file: "tests.json"
+          json_suite_details: true
+          json_test_case_results: true
+          report_suite_logs: "any"
+          docker_registry: local
+          docker_tag: latest
+          log_level: DEBUG
 
       - name: JSON output
         uses: ./misc/action/json-output
@@ -201,21 +108,21 @@ jobs:
 
       - name: Scan for vulnerabilities
         id: scan
-        uses: crazy-max/ghaction-container-scan@v3
+        uses: crazy-max/ghaction-container-scan@a0a3900b79d158c85ccf034e5368fae620a9233a  # v4.0.0
         continue-on-error: true
         with:
-          image: enricomi/publish-unit-test-result-action:latest
+          image: local/enricomi/publish-unit-test-result-action:latest
           dockerfile: ./Dockerfile
           annotations: true
       - name: Upload SARIF artifact
         if: steps.scan.outcome == 'success'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: SARIF ${{ matrix.arch }}
           path: ${{ steps.scan.outputs.sarif }}
       - name: Upload SARIF file
-        if: always() && steps.scan.outputs.sarif != ''
-        uses: github/codeql-action/upload-sarif@v3
+        if: (!cancelled() && steps.scan.outputs.sarif != '')
+        uses: github/codeql-action/upload-sarif@7211b7c8077ea37d8641b6271f6a365a22a5fbfa  # v4.36.0
         with:
           sarif_file: ${{ steps.scan.outputs.sarif }}
 
@@ -241,20 +148,20 @@ jobs:
           - os: ubuntu-latest
             os-label: Linux
             python: "installed"
-          - os: ubuntu-20.04
-            os-label: Linux 20.04
+          - os: ubuntu-22.04
+            os-label: Linux 22.04
             python: "installed"
-          - os: ubuntu-24.04
-            os-label: Linux 24.04
+          - os: ubuntu-slim
+            os-label: Linux Slim
             python: "installed"
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
 
       - name: Setup Python
         if: matrix.python != 'installed' && matrix.python != 'venv'
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
           python-version: ${{ matrix.python }}
 
@@ -264,7 +171,7 @@ jobs:
         shell: bash
 
       - name: Download Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         with:
           path: artifacts
 
@@ -298,32 +205,32 @@ jobs:
       matrix:
         # https://docs.github.com/en/actions/using-github-hosted-runners/about-github-hosted-runners#supported-runners-and-hardware-resources
         include:
-          - os: macos-13
-            os-label: macOS
-            python: "3.8"
           - os: macos-latest
             os-label: macOS
             python: "venv"
           - os: macos-latest
             os-label: macOS
             python: "installed"
-          - os: macos-13
-            os-label: macOS 13
+          - os: macos-14
+            os-label: macOS 14
+            python: "installed"
+          - os: macos-26
+            os-label: macOS 26
             python: "installed"
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
 
       - name: Setup Python
         if: matrix.python != 'installed' && matrix.python != 'venv'
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
           python-version: ${{ matrix.python }}
 
       - name: Setup Python
         if: matrix.python == 'venv'
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
           python-version: "3.10"
 
@@ -333,7 +240,7 @@ jobs:
         shell: bash
 
       - name: Download Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         with:
           path: artifacts
 
@@ -369,21 +276,21 @@ jobs:
         include:
           - os: windows-latest
             os-label: Windows
-            python: "installed"
+            python: "venv"
           - os: windows-latest
             os-label: Windows
-            python: "venv"
-          - os: windows-2019
-            os-label: Windows 2019
+            python: "installed"
+          - os: windows-2022
+            os-label: Windows 2022
             python: "installed"
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
 
       - name: Setup Python
         if: matrix.python != 'installed' && matrix.python != 'venv'
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
           python-version: ${{ matrix.python }}
 
@@ -393,7 +300,7 @@ jobs:
         shell: bash
 
       - name: Download Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         with:
           path: artifacts
 
@@ -416,7 +323,7 @@ jobs:
 
       - name: Publish Test Results (Bash)
         id: test-results-bash
-        if: always() && steps.test-results.outcome != 'skipped'
+        if: (!cancelled() && steps.test-results.outcome != 'skipped')
         uses: ./windows/bash
         with:
           check_name: Test Results (${{ matrix.os-label }} bash python ${{ matrix.python }})
@@ -455,10 +362,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
 
       - name: Download Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         with:
           path: artifacts
 
@@ -466,7 +373,7 @@ jobs:
         id: test-results
         uses: ./composite
         with:
-          check_name: Test Results (${{ matrix.os-label }} composite python ${{ matrix.python }})
+          check_name: Test Results (${{ matrix.os-label }} composite)
           files: |
             artifacts/**/*.xml
             artifacts\**\*.xml
@@ -490,7 +397,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
 
       - name: Copy test result files
         run: cp -rv python/test/files test-files
@@ -536,7 +443,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
 
       - name: Copy test junit xml files
         run: cp -rv python/test/files/junit-xml test-files
